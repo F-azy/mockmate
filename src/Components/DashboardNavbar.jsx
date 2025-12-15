@@ -1,7 +1,18 @@
 import React from "react";
 import { LogOut, User } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
-const DashboardNavbar = ({ userName = "John" }) => {
+const DashboardNavbar = ({ userName = "User" }) => {
+  const navigate = useNavigate();
+
+  const handleSignOut = () => {
+    // Clear authentication data
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    // Redirect to signin
+    navigate("/signin");
+  };
+
   return (
     <nav className="flex justify-between items-center px-6 py-4 bg-white border-b border-gray-200 shadow-sm">
       {/* Logo / Brand */}
@@ -19,7 +30,10 @@ const DashboardNavbar = ({ userName = "John" }) => {
         </div>
 
         {/* Sign Out */}
-        <button className="flex items-center text-red-600 hover:text-red-800 font-medium">
+        <button 
+          onClick={handleSignOut}
+          className="flex items-center text-red-600 hover:text-red-800 font-medium transition-colors"
+        >
           <LogOut className="w-5 h-5 mr-1" />
           Sign Out
         </button>

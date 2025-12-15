@@ -1,138 +1,117 @@
-// src/Components/QuickPractice.jsx
 import React, { useState, useRef, useEffect } from "react";
+import { Mic, StopCircle, Loader, CheckCircle, RefreshCw, ArrowRight, BookOpen } from "lucide-react";
 import DashboardNavbar from "./DashboardNavbar";
-import { Mic, StopCircle, Play, RefreshCw } from "lucide-react";
 import { Link } from "react-router-dom";
 
-/**
- * QuickPractice page:
- * - job role input -> generate questions (from sample array)
- * - show current question
- * - choose response mode: Text / Audio
- * - audio recording using MediaRecorder (browser)
- * - save answers (text or audio blob)
- * - navigate questions
- *
- * Replace sampleQuestions with server-provided dataset when ready.
- */
-
-const sampleQuestions = [
-  // GATE/CS fundamentals style sample questions (short versions)
-  { id: 1, topic: "DSA", text: "Explain the difference between an array and a linked list." },
-  { id: 2, topic: "DSA", text: "What is the time complexity of binary search? Explain why." },
-  { id: 3, topic: "Algorithms", text: "Describe quicksort and its average/worst case complexities." },
-  { id: 4, topic: "OS", text: "What is a race condition? How can it be prevented?" },
-  { id: 5, topic: "DBMS", text: "Explain normalization and why it's important." },
-  { id: 6, topic: "CN", text: "Explain the TCP three-way handshake." },
-  { id: 7, topic: "TOC", text: "What is the difference between DFA and NFA?" },
-  { id: 8, topic: "Compilers", text: "What is lexical analysis in compiler design?" },
-  { id: 9, topic: "OS", text: "What is virtual memory? How does paging work?" },
-  { id: 10, topic: "DBMS", text: "What is an index in databases? Types of indexing?" },
-  { id: 11, topic: "CN", text: "What is DNS? How does it resolve domain names?" },
-  { id: 12, topic: "Algorithms", text: "Explain dynamic programming vs divide-and-conquer." },
-  { id: 13, topic: "DSA", text: "When to prefer a heap over a balanced BST?" },
-  { id: 14, topic: "Security", text: "What is symmetric vs asymmetric encryption?" },
-  { id: 15, topic: "AI/ML", text: "Explain the bias-variance tradeoff briefly." }
-];
+const API_BASE = "http://localhost:5000/api";
 
 const QuickPractice = () => {
-  // Setup
+  // User info
+  const [userName, setUserName] = useState("User");
+  
+  // Setup phase
   const [jobRole, setJobRole] = useState("");
+  const [setupComplete, setSetupComplete] = useState(false);
+  
+  // Questions
   const [questions, setQuestions] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
-
-  // Response mode: 'text' or 'audio'
-  const [mode, setMode] = useState("text");
-
-  // Text answer state
-  const [answerText, setAnswerText] = useState("");
-
-  // Audio recording state
+  const currentQuestion = questions[currentIndex];
+  
+  // Recording states
+  const [recording, setRecording] = useState(false);
+  const [recTime, setRecTime] = useState(0);
+  const [audioBlob, setAudioBlob] = useState(null);
+  const [audioURL, setAudioURL] = useState(null);
+  
+  // Processing & AI states
+  const [processing, setProcessing] = useState(false);
+  const [transcription, setTranscription] = useState("");
+  const [aiFeedback, setAiFeedback] = useState("");
+  
+  // Refs
   const mediaRecorderRef = useRef(null);
   const streamRef = useRef(null);
-  const [recording, setRecording] = useState(false);
-  const [recSecs, setRecSecs] = useState(0);
   const timerRef = useRef(null);
-  const [chunks, setChunks] = useState([]);
-  const [audioURL, setAudioURL] = useState(null);
-  const [audioBlob, setAudioBlob] = useState(null);
+  const chunksRef = useRef([]);
 
-  // Saved answers
-  const [answers, setAnswers] = useState([]); // { qId, type: 'text'|'audio', text?, blob?, url? }
-
-  // UI messages
-  const [message, setMessage] = useState("");
-
-  // Generate questions based on jobRole (simple keyword match + random)
-  const generateQuestions = () => {
-    setMessage("");
-    // Lowercase jobRole for matching
-    const role = jobRole.toLowerCase();
-    // Simple filter: pick questions whose text/topic contains keywords
-    const matched = sampleQuestions.filter(q => {
-      if (!role) return false;
-      if (role.includes("software") || role.includes("engineer") || role.includes("developer")) {
-        return q.topic === "DSA" || q.topic === "Algorithms" || q.topic === "Compilers";
+  useEffect(() => {
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
+    setUserName(user.name || "User");
+    
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(t => t.stop());
       }
-      if (role.includes("data") || role.includes("scientist") || role.includes("ml")) {
-        return q.topic === "AI/ML" || q.topic === "Algorithms" || q.topic === "DSA";
+    };
+  }, []);
+const generateQuestions = async () => {
+  if (!jobRole.trim()) return;
+  
+  try {
+    const token = localStorage.getItem("token");
+    const response = await fetch(
+      `${API_BASE}/questions/interview?jobRole=${encodeURIComponent(jobRole)}&count=6`,
+      {
+        headers: {
+          "Authorization": `Bearer ${token}`
+        }
       }
-      if (role.includes("network") || role.includes("networking")) {
-        return q.topic === "CN";
-      }
-      if (role.includes("db") || role.includes("database") || role.includes("sql")) {
-        return q.topic === "DBMS";
-      }
-      // fallback: mix of core CS fundamentals
-      return true;
-    });
+    );
 
-    // If matched has few items, fallback to sampling from full array
-    const pool = matched.length >= 5 ? matched : sampleQuestions;
-    // shuffle and select 6 questions
-    const shuffled = [...pool].sort(() => Math.random() - 0.5);
-    const selected = shuffled.slice(0, 6);
-    setQuestions(selected);
-    setCurrentIndex(0);
-    setAnswers([]);
-    setAnswerText("");
-    setAudioURL(null);
-    setAudioBlob(null);
-    setMessage(`Generated ${selected.length} questions for "${jobRole || "General CS"}".`);
-  };
-
-  // Recording functions
-  const startRecording = async () => {
-    setMessage("");
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      setMessage("Audio recording is not supported in this browser.");
-      return;
+    const data = await response.json();
+    
+    if (response.ok) {
+      setQuestions(data.questions);
+      setSetupComplete(true);
+      setCurrentIndex(0);
+    } else {
+      alert(data.message || "Failed to generate questions");
     }
+  } catch (error) {
+    console.error("Error generating questions:", error);
+    alert("Failed to generate questions. Please try again.");
+  }
+};
+
+  const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
-      const mr = new MediaRecorder(stream);
-      mediaRecorderRef.current = mr;
-      setChunks([]);
-      mr.ondataavailable = (e) => setChunks(prev => prev.concat(e.data));
-      mr.onstop = () => {
-        const blob = new Blob(chunks, { type: "audio/webm" });
+      
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      chunksRef.current = [];
+      
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) {
+          chunksRef.current.push(e.data);
+        }
+      };
+      
+      mediaRecorder.onstop = () => {
+        const blob = new Blob(chunksRef.current, { type: "audio/webm" });
         const url = URL.createObjectURL(blob);
         setAudioBlob(blob);
         setAudioURL(url);
-        // stop tracks
+        
         if (streamRef.current) {
           streamRef.current.getTracks().forEach(t => t.stop());
-          streamRef.current = null;
         }
       };
-      mr.start();
+      
+      mediaRecorder.start();
       setRecording(true);
-      setRecSecs(0);
-      timerRef.current = setInterval(() => setRecSecs(s => s + 1), 1000);
+      setRecTime(0);
+      
+      timerRef.current = setInterval(() => {
+        setRecTime(t => t + 1);
+      }, 1000);
+      
     } catch (err) {
-      console.error(err);
-      setMessage("Permission denied or audio device unavailable.");
+      console.error("Recording error:", err);
+      alert("Could not access microphone. Please allow microphone permissions.");
     }
   };
 
@@ -143,235 +122,298 @@ const QuickPractice = () => {
     setRecording(false);
     if (timerRef.current) {
       clearInterval(timerRef.current);
-      timerRef.current = null;
     }
   };
-
-  useEffect(() => {
-    // cleanup on unmount
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach(t => t.stop());
-      }
-    };
-  }, []);
-
-  // Save current answer (text or audio)
-  const saveAnswer = () => {
-    const q = questions[currentIndex];
-    if (!q) return;
-    if (mode === "text") {
-      if (!answerText.trim()) {
-        setMessage("Please type your answer before saving.");
-        return;
-      }
-      setAnswers(prev => [...prev, { qId: q.id, type: "text", text: answerText.trim() }]);
-      setAnswerText("");
-      setMessage("Text answer saved.");
+// Process audio with backend
+const processAudio = async () => {
+  if (!audioBlob) return;
+  
+  setProcessing(true);
+  setTranscription("");
+  setAiFeedback("");
+  
+  try {
+    const formData = new FormData();
+    formData.append("audio", audioBlob, "answer.webm");
+    formData.append("questionText", currentQuestion.text);
+    
+    const token = localStorage.getItem("token");
+    const response = await fetch(`${API_BASE}/answers/submit-audio`, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${token}`
+      },
+      body: formData
+    });
+    
+    const data = await response.json();
+    
+    if (response.ok) {
+      setTranscription(data.transcription);
+      setAiFeedback(data.feedback);
     } else {
-      // audio
-      if (!audioBlob) {
-        setMessage("No audio recorded yet.");
-        return;
-      }
-      setAnswers(prev => [...prev, { qId: q.id, type: "audio", blob: audioBlob, url: audioURL }]);
-      setAudioBlob(null);
-      setAudioURL(null);
-      setMessage("Audio answer saved.");
+      alert(data.message || "Failed to process audio");
     }
+  } catch (error) {
+    console.error("Processing error:", error);
+    alert("Failed to process audio. Please try again.");
+  } finally {
+    setProcessing(false);
+  }
+};
+
+  const recordAgain = () => {
+    setAudioBlob(null);
+    setAudioURL(null);
+    setTranscription("");
+    setAiFeedback("");
   };
 
-  const goNext = () => {
+  const nextQuestion = () => {
     if (currentIndex < questions.length - 1) {
-      setCurrentIndex(i => i + 1);
-      setAnswerText("");
-      setAudioURL(null);
-      setAudioBlob(null);
-      setMessage("");
-    } else {
-      setMessage("End of questions. You can regenerate or review your answers.");
+      setCurrentIndex(currentIndex + 1);
+      recordAgain();
     }
   };
 
-  const goPrev = () => {
-    if (currentIndex > 0) {
-      setCurrentIndex(i => i - 1);
-      setAnswerText("");
-      setAudioURL(null);
-      setAudioBlob(null);
-      setMessage("");
-    }
+  const formatTime = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const regenerate = () => {
-    generateQuestions();
-  };
+  // Setup Screen
+  if (!setupComplete) {
+    return (
+      <div className="min-h-screen bg-gray-100">
+        <DashboardNavbar userName={userName} />
 
-  return (
-    <div className="min-h-screen bg-gray-100">
-      <DashboardNavbar userName="John" />
-
-      <div className="p-8 max-w-6xl mx-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-800">Quick Practice</h1>
-            <p className="text-sm text-gray-600">Short focused sessions tailored for CS freshers.</p>
+        <div className="p-8 max-w-4xl mx-auto">
+          <div className="text-center mb-8">
+            <h1 className="text-4xl font-bold text-gray-800 mb-3">Quick Practice</h1>
+            <p className="text-lg text-gray-600">Record your answers and get instant AI feedback</p>
           </div>
-          <div>
-            <Link to="/dashboard" className="text-sm text-blue-600 hover:underline">← Back to Dashboard</Link>
-          </div>
-        </div>
 
-        {/* Setup Card */}
-        <div className="bg-white p-6 rounded-2xl shadow-md mb-6">
-          <h3 className="text-sm font-semibold text-blue-500 mb-2">Quick Practice Setup</h3>
-          <div className="grid md:grid-cols-3 gap-4 items-end">
-            <div className="md:col-span-2">
-              <label className="text-sm text-gray-700 font-medium">What job are you preparing for?</label>
+          {/* Setup Card */}
+          <div className="bg-white rounded-2xl shadow-lg p-8 mb-6">
+            <div className="mb-6">
+              <label className="block text-sm font-semibold text-gray-700 mb-3">
+                What job role are you preparing for?
+              </label>
               <input
-                placeholder='e.g. "Software Engineer, Product Manager, Data Scientist"'
+                type="text"
+                placeholder='e.g., "Software Engineer", "Data Scientist", "Product Manager"'
                 value={jobRole}
                 onChange={(e) => setJobRole(e.target.value)}
-                className="w-full mt-2 p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-lg"
+                onKeyPress={(e) => e.key === 'Enter' && jobRole.trim() && generateQuestions()}
               />
             </div>
 
-            <div className="flex gap-2">
-              <button
-                onClick={generateQuestions}
-                className="px-4 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-lg font-medium hover:opacity-95"
-              >
-                Generate Interview Questions
-              </button>
-              <button
-                onClick={regenerate}
-                title="Regenerate"
-                className="px-3 py-3 bg-white border rounded-lg flex items-center gap-2 hover:shadow"
-              >
-                <RefreshCw className="w-4 h-4 text-gray-600" /> Regenerate
-              </button>
-            </div>
-          </div>
-          <p className="text-sm text-gray-500 mt-3">Questions are sampled from core Computer Science fundamentals (GATE-style).</p>
-        </div>
-
-        {/* Interview Card */}
-        <div className="bg-white p-6 rounded-2xl shadow-md mb-6">
-          <div className="flex items-start justify-between">
-            <div>
-              <h3 className="text-sm font-semibold text-blue-500 mb-1">Interview Question</h3>
-              <h2 className="text-lg font-bold text-gray-800 mb-3">
-                {questions.length ? `${currentIndex + 1}. ${questions[currentIndex].text}` : "No questions generated yet."}
-              </h2>
-              <p className="text-sm text-gray-600 mb-4">Take a moment to think about your answer, then record or type it below.</p>
-            </div>
-
-            <div className="text-right">
-              <p className="text-xs text-gray-500">Questions: <span className="font-semibold">{questions.length}</span></p>
-              <p className="text-xs text-gray-500">Saved answers: <span className="font-semibold">{answers.length}</span></p>
-            </div>
-          </div>
-
-          {/* Mode Selector */}
-          <div className="flex items-center gap-4 mb-4">
             <button
-              onClick={() => setMode("text")}
-              className={`px-3 py-1 rounded-full ${mode === "text" ? "bg-blue-600 text-white" : "bg-white border"}`}
+              onClick={generateQuestions}
+              disabled={!jobRole.trim()}
+              className="w-full py-4 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl font-bold text-lg hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
             >
-              Text Answer
-            </button>
-            <button
-              onClick={() => setMode("audio")}
-              className={`px-3 py-1 rounded-full ${mode === "audio" ? "bg-blue-600 text-white" : "bg-white border"}`}
-            >
-              Audio Answer
+              <span>Start Interview Practice</span>
+              <ArrowRight size={20} />
             </button>
           </div>
 
-          {/* Response Area */}
-          {mode === "text" ? (
-            <div>
-              <textarea
-                placeholder="Type your answer here..."
-                value={answerText}
-                onChange={(e) => setAnswerText(e.target.value)}
-                rows={6}
-                className="w-full p-3 border rounded-lg mb-3 focus:outline-none focus:ring-2 focus:ring-blue-400"
-              />
-              <div className="flex items-center gap-3">
-                <button onClick={saveAnswer} className="px-4 py-2 bg-blue-600 text-white rounded-lg">Save Answer</button>
-                <button onClick={goPrev} className="px-3 py-2 bg-white border rounded-lg">Prev</button>
-                <button onClick={goNext} className="px-3 py-2 bg-white border rounded-lg">Next</button>
+          {/* MCQ Aptitude Option */}
+          <div className="bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl shadow-lg p-8 text-white">
+            <div className="flex items-start space-x-4">
+              <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0">
+                <BookOpen size={24} />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-2xl font-bold mb-2">Aptitude Preparation</h3>
+                <p className="text-white/90 mb-4">
+                  Practice MCQ-based aptitude questions tailored to your target role. Perfect for quick warm-ups and testing your knowledge.
+                </p>
+                <Link to="/aptitude-practice">
+                  <button className="px-6 py-3 bg-white text-purple-600 rounded-lg font-semibold hover:bg-gray-100 transition-colors">
+                    Practice Aptitude Questions →
+                  </button>
+                </Link>
               </div>
             </div>
-          ) : (
-            <div>
-              <div className="flex items-center gap-4 mb-3">
-                <div className="flex items-center gap-2">
-                  {!recording ? (
-                    <button onClick={startRecording} className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg">
-                      <Mic className="w-4 h-4" /> Start Recording
-                    </button>
-                  ) : (
-                    <button onClick={stopRecording} className="flex items-center gap-2 px-4 py-2 bg-gray-800 text-white rounded-lg">
-                      <StopCircle className="w-4 h-4" /> Stop
-                    </button>
-                  )}
-                  <div className="text-sm text-gray-600"> {recording ? `Recording • ${recSecs}s` : audioURL ? "Recording ready" : "Not recorded"}</div>
-                </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
-                <div className="flex items-center gap-2">
+  // Interview Screen
+  return (
+    <div className="min-h-screen bg-gray-100">
+      <DashboardNavbar userName={userName} />
+
+      <div className="p-8 max-w-5xl mx-auto">
+        {/* Progress Bar */}
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-medium text-gray-700">
+              Question {currentIndex + 1} of {questions.length}
+            </span>
+            <button
+              onClick={() => setSetupComplete(false)}
+              className="text-sm text-blue-600 hover:underline font-medium"
+            >
+              Change Role
+            </button>
+          </div>
+          <div className="w-full bg-gray-200 rounded-full h-2">
+            <div 
+              className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+              style={{ width: `${((currentIndex + 1) / questions.length) * 100}%` }}
+            ></div>
+          </div>
+        </div>
+
+        {/* Question Card */}
+        <div className="bg-white rounded-2xl shadow-lg p-8 mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">
+              {jobRole}
+            </span>
+            <span className="text-sm text-gray-500">Question {currentIndex + 1}/{questions.length}</span>
+          </div>
+
+          <h2 className="text-2xl font-bold text-gray-800 mb-6">
+            {currentQuestion?.text}
+          </h2>
+
+          <p className="text-gray-600 mb-6">
+            Take a moment to think about your answer and click the button below to start recording.
+          </p>
+
+          {/* Recording Controls */}
+          <div className="space-y-4">
+            {!audioBlob && !recording && (
+              <button
+                onClick={startRecording}
+                className="w-full py-4 bg-red-500 hover:bg-red-600 text-white rounded-xl font-bold text-lg flex items-center justify-center space-x-3 transition-colors"
+              >
+                <Mic size={24} />
+                <span>Start Recording</span>
+              </button>
+            )}
+
+            {recording && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-center space-x-4 py-6 bg-red-50 rounded-xl">
+                  <div className="w-4 h-4 bg-red-500 rounded-full animate-pulse"></div>
+                  <span className="text-2xl font-bold text-red-600">
+                    {formatTime(recTime)}
+                  </span>
+                  <span className="text-gray-600">Recording...</span>
+                </div>
+                
+                <button
+                  onClick={stopRecording}
+                  className="w-full py-4 bg-gray-800 hover:bg-gray-900 text-white rounded-xl font-bold text-lg flex items-center justify-center space-x-3 transition-colors"
+                >
+                  <StopCircle size={24} />
+                  <span>Stop Recording</span>
+                </button>
+              </div>
+            )}
+
+            {audioBlob && !processing && !transcription && (
+              <div className="space-y-4">
+                <div className="p-4 bg-green-50 border border-green-200 rounded-xl">
+                  <div className="flex items-center space-x-3 mb-3">
+                    <CheckCircle className="text-green-600" size={24} />
+                    <span className="font-semibold text-green-800">Recording Complete</span>
+                  </div>
                   {audioURL && (
-                    <audio controls src={audioURL} className="outline-none" />
+                    <audio controls src={audioURL} className="w-full" />
                   )}
                 </div>
-              </div>
 
-              <div className="flex items-center gap-3">
-                <button onClick={saveAnswer} className="px-4 py-2 bg-blue-600 text-white rounded-lg">Save Audio Answer</button>
-                <button onClick={goPrev} className="px-3 py-2 bg-white border rounded-lg">Prev</button>
-                <button onClick={goNext} className="px-3 py-2 bg-white border rounded-lg">Next</button>
-              </div>
-            </div>
-          )}
-
-        </div>
-
-        {/* Saved Answers / Review */}
-        <div className="bg-white p-6 rounded-2xl shadow-md mb-8">
-          <h3 className="text-sm font-semibold text-gray-700 mb-3">Saved Answers</h3>
-          {answers.length === 0 ? (
-            <p className="text-sm text-gray-500">You have not saved any answers yet.</p>
-          ) : (
-            <div className="grid gap-3">
-              {answers.map((a, idx) => (
-                <div key={idx} className="p-3 border rounded-lg flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium">Q {idx + 1}: {sampleQuestions.find(q => q.id === a.qId)?.text || "Question"}</p>
-                    <p className="text-xs text-gray-600">{a.type === "text" ? a.text.slice(0, 120) + (a.text.length > 120 ? "..." : "") : "Audio answer"}</p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {a.type === "audio" && a.url && (
-                      <audio controls src={a.url} />
-                    )}
-                  </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <button
+                    onClick={recordAgain}
+                    className="py-3 bg-white border-2 border-gray-300 text-gray-700 rounded-xl font-semibold hover:bg-gray-50 flex items-center justify-center space-x-2"
+                  >
+                    <RefreshCw size={20} />
+                    <span>Record Again</span>
+                  </button>
+                  
+                  <button
+                    onClick={processAudio}
+                    className="py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold flex items-center justify-center space-x-2"
+                  >
+                    <span>Process & Get Feedback</span>
+                    <ArrowRight size={20} />
+                  </button>
                 </div>
-              ))}
-            </div>
-          )}
+              </div>
+            )}
+
+            {processing && (
+              <div className="py-12 bg-blue-50 rounded-xl flex flex-col items-center justify-center space-y-4">
+                <Loader className="w-12 h-12 text-blue-600 animate-spin" />
+                <p className="text-lg font-semibold text-blue-800">Processing your response...</p>
+                <p className="text-sm text-gray-600">Transcribing audio and generating AI feedback</p>
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* Footer quick tips */}
-        <div className="text-sm text-gray-600">
-          <p className="mb-2">Tips: Focus on clarity and structure. For technical answers, mention approach, complexity, and trade-offs.</p>
-          <p className="text-gray-500">Note: This page uses a local sample dataset of CS fundamentals. In the final version, questions will be drawn from a curated GATE-style dataset and tailored using your uploaded resume.</p>
-        </div>
+        {/* Response & Feedback */}
+        {transcription && (
+          <div className="space-y-6">
+            {/* Your Response */}
+            <div className="bg-white rounded-2xl shadow-lg p-8">
+              <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center space-x-2">
+                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                <span>Your Response</span>
+              </h3>
+              <p className="text-gray-700 leading-relaxed">{transcription}</p>
+            </div>
+
+            {/* AI Feedback */}
+            <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-2xl shadow-lg p-8 border border-green-200">
+              <h3 className="text-xl font-bold text-green-800 mb-4 flex items-center space-x-2">
+                <CheckCircle className="text-green-600" size={24} />
+                <span>AI Feedback</span>
+              </h3>
+              <p className="text-gray-800 leading-relaxed">{aiFeedback}</p>
+            </div>
+
+            {/* Navigation */}
+            <div className="flex items-center justify-between">
+              <button
+                onClick={recordAgain}
+                className="px-6 py-3 bg-white border-2 border-gray-300 text-gray-700 rounded-xl font-semibold hover:bg-gray-50 flex items-center space-x-2"
+              >
+                <RefreshCw size={20} />
+                <span>Try Again</span>
+              </button>
+
+              {currentIndex < questions.length - 1 ? (
+                <button
+                  onClick={nextQuestion}
+                  className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold flex items-center space-x-2"
+                >
+                  <span>Next Question</span>
+                  <ArrowRight size={20} />
+                </button>
+              ) : (
+                <Link to="/dashboard">
+                  <button className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl font-semibold">
+                    Complete Practice →
+                  </button>
+                </Link>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
 };
 
 export default QuickPractice;
-

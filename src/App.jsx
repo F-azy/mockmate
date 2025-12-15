@@ -8,27 +8,57 @@ import Signup from "./Components/Signup";
 import Dashboard from "./Components/Dashboard";
 import QuickPractice from "./Components/QuickPractice";
 import LiveInterview from "./Components/LiveInterview";
+import ProtectedRoute from "./Components/ProtectedRoute";
+import AptitudePractice from "./Components/AptitudePractice";
 
 function App() {
   return (
     <Router>
       <Routes>
-        {/* Landing Page */}
+        {/* Public Routes */}
         <Route path="/" element={<Home />} />
-
-        {/* Authentication Pages */}
         <Route path="/signin" element={<Signin />} />
         <Route path="/signup" element={<Signup />} />
 
-        <Route path="/dashboard" element={<Dashboard />} />
+        {/* Protected Routes */}
+        <Route 
+          path="/dashboard" 
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          } 
+        />
         
-        <Route path="/quick-practice" element={<QuickPractice />} />
-        
-        <Route path="/live-interview" element={<LiveInterview />} />
+        <Route 
+          path="/quick-practice" 
+          element={
+            <ProtectedRoute>
+              <QuickPractice />
+            </ProtectedRoute>
+          } 
+        />
+           {/* NEW: Aptitude Practice Route */}
+        <Route 
+          path="/aptitude-practice" 
+          element={
+            <ProtectedRoute>
+              <AptitudePractice />
+            </ProtectedRoute>
+          } 
+        />
+
+        <Route 
+          path="/live-interview" 
+          element={
+            <ProtectedRoute>
+              <LiveInterview />
+            </ProtectedRoute>
+          } 
+        />
       </Routes>
     </Router>
   );
 }
 
 export default App;
-
