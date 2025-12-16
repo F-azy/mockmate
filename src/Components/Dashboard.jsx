@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Upload, FileText, Video, CheckCircle, TrendingUp, Zap, X, Loader } from "lucide-react";
 import DashboardNavbar from "./DashboardNavbar";
 import { Link } from "react-router-dom";
+import ResumeAnalysis from "./ResumeAnalysis";
 
 const API_BASE = "http://localhost:5000/api";
 
@@ -15,6 +16,17 @@ const Dashboard = () => {
   const [uploadError, setUploadError] = useState("");
   const [uploadSuccess, setUploadSuccess] = useState("");
   const [myResumes, setMyResumes] = useState([]);
+
+  const [showAnalysis, setShowAnalysis] = useState(false);
+const [selectedResumeId, setSelectedResumeId] = useState(null);
+
+// Add this function to handle analyze click
+const handleAnalyzeResume = (resumeId) => {
+  setSelectedResumeId(resumeId);
+  setShowAnalysis(true);
+};
+
+
 
   // Get user info from localStorage
   useEffect(() => {
@@ -251,32 +263,52 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Recent Resumes */}
-        {myResumes.length > 0 && (
-          <div className="bg-white p-6 rounded-2xl shadow-md mb-8">
-            <h2 className="text-lg font-bold text-gray-800 mb-4">My Resumes</h2>
-            <div className="space-y-3">
-              {myResumes.map((resume) => (
-                <div key={resume.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    <FileText className="w-5 h-5 text-blue-500" />
-                    <div>
-                      <p className="font-medium text-gray-800">{resume.filename}</p>
-                      <p className="text-xs text-gray-500">
-                        {resume.roleName} • {new Date(resume.uploadedAt).toLocaleDateString()}
-                      </p>
-                    </div>
-                  </div>
-                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                    resume.status === 'analyzed' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'
-                  }`}>
-                    {resume.status}
-                  </span>
-                </div>
-              ))}
+     {myResumes.length > 0 && (
+  <div className="bg-white p-6 rounded-2xl shadow-md mb-8">
+    <h2 className="text-lg font-bold text-gray-800 mb-4">My Resumes</h2>
+    <div className="space-y-3">
+      {myResumes.map((resume) => (
+        <div key={resume.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+          <div className="flex items-center space-x-3">
+            <FileText className="w-5 h-5 text-blue-500" />
+            <div>
+              <p className="font-medium text-gray-800">{resume.filename}</p>
+              <p className="text-xs text-gray-500">
+                {resume.roleName} • {new Date(resume.uploadedAt).toLocaleDateString()}
+              </p>
             </div>
           </div>
-        )}
+          <div className="flex items-center space-x-2">
+            <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+              resume.status === 'analyzed' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'
+            }`}>
+              {resume.status}
+            </span>
+            <button
+              onClick={() => handleAnalyzeResume(resume.id)}
+              className="px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-semibold hover:bg-purple-700"
+            >
+              Analyze
+            </button>
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+)}
+
+{showAnalysis && selectedResumeId && (
+  <div className="fixed inset-0 bg-white z-50 overflow-y-auto">
+    <ResumeAnalysis 
+      resumeId={selectedResumeId} 
+      onBack={() => {
+        setShowAnalysis(false);
+        setSelectedResumeId(null);
+        fetchMyResumes(); // Refresh resumes
+      }}
+    />
+  </div>
+)}
       </div>
 
       {/* Upload Modal */}
@@ -377,3 +409,4 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
+

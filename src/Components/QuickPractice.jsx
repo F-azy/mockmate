@@ -5,6 +5,74 @@ import { Link } from "react-router-dom";
 
 const API_BASE = "http://localhost:5000/api";
 
+// ✅ NEW: Circular Score Component
+const CircularScore = ({ score, maxScore = 10 }) => {
+  const percentage = (score / maxScore) * 100;
+  const circumference = 2 * Math.PI * 45; // radius = 45
+  const strokeDashoffset = circumference - (percentage / 100) * circumference;
+  
+  // Determine color based on score
+  let color = '#ef4444'; // red for low scores
+  let bgColor = '#fee2e2';
+  let textColor = 'text-red-600';
+  
+  if (score >= 7) {
+    color = '#22c55e'; // green for good scores
+    bgColor = '#dcfce7';
+    textColor = 'text-green-600';
+  } else if (score >= 5) {
+    color = '#f59e0b'; // orange for medium scores
+    bgColor = '#fef3c7';
+    textColor = 'text-orange-600';
+  }
+  
+  return (
+    <div className="flex flex-col items-center">
+      <div className="relative w-32 h-32">
+        {/* Background circle */}
+        <svg className="transform -rotate-90 w-32 h-32">
+          <circle
+            cx="64"
+            cy="64"
+            r="45"
+            stroke={bgColor}
+            strokeWidth="8"
+            fill="none"
+          />
+          {/* Progress circle */}
+          <circle
+            cx="64"
+            cy="64"
+            r="45"
+            stroke={color}
+            strokeWidth="8"
+            fill="none"
+            strokeDasharray={circumference}
+            strokeDashoffset={strokeDashoffset}
+            strokeLinecap="round"
+            className="transition-all duration-1000 ease-out"
+          />
+        </svg>
+        
+        {/* Score text in center */}
+        <div className="absolute inset-0 flex flex-col items-center justify-center">
+          <span className={`text-3xl font-bold ${textColor}`}>
+            {score.toFixed(1)}
+          </span>
+          <span className="text-sm text-gray-500">out of {maxScore}</span>
+        </div>
+      </div>
+      
+      {/* Score label */}
+      <div className="mt-3 text-center">
+        <p className={`text-sm font-semibold ${textColor}`}>
+          {score >= 7 ? '🎉 Great!' : score >= 5 ? '👍 Good' : '💪 Keep Practicing'}
+        </p>
+      </div>
+    </div>
+  );
+};
+
 const QuickPractice = () => {
   // User info
   const [userName, setUserName] = useState("User");
@@ -28,6 +96,9 @@ const QuickPractice = () => {
   const [processing, setProcessing] = useState(false);
   const [transcription, setTranscription] = useState("");
   const [aiFeedback, setAiFeedback] = useState("");
+  const [score, setScore] = useState(0); // ✅ NEW: Store score
+  const [strengths, setStrengths] = useState([]);
+  const [improvements, setImprovements] = useState([]);
   
   // Refs
   const mediaRecorderRef = useRef(null);
@@ -46,34 +117,36 @@ const QuickPractice = () => {
       }
     };
   }, []);
-const generateQuestions = async () => {
-  if (!jobRole.trim()) return;
-  
-  try {
-    const token = localStorage.getItem("token");
-    const response = await fetch(
-      `${API_BASE}/questions/interview?jobRole=${encodeURIComponent(jobRole)}&count=6`,
-      {
-        headers: {
-          "Authorization": `Bearer ${token}`
-        }
-      }
-    );
 
-    const data = await response.json();
+  // Generate questions from backend
+  const generateQuestions = async () => {
+    if (!jobRole.trim()) return;
     
-    if (response.ok) {
-      setQuestions(data.questions);
-      setSetupComplete(true);
-      setCurrentIndex(0);
-    } else {
-      alert(data.message || "Failed to generate questions");
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(
+        `${API_BASE}/questions/interview?jobRole=${encodeURIComponent(jobRole)}&count=6`,
+        {
+          headers: {
+            "Authorization": `Bearer ${token}`
+          }
+        }
+      );
+
+      const data = await response.json();
+      
+      if (response.ok) {
+        setQuestions(data.questions);
+        setSetupComplete(true);
+        setCurrentIndex(0);
+      } else {
+        alert(data.message || "Failed to generate questions");
+      }
+    } catch (error) {
+      console.error("Error generating questions:", error);
+      alert("Failed to generate questions. Please try again.");
     }
-  } catch (error) {
-    console.error("Error generating questions:", error);
-    alert("Failed to generate questions. Please try again.");
-  }
-};
+  };
 
   const startRecording = async () => {
     try {
@@ -124,49 +197,62 @@ const generateQuestions = async () => {
       clearInterval(timerRef.current);
     }
   };
-// Process audio with backend
-const processAudio = async () => {
-  if (!audioBlob) return;
-  
-  setProcessing(true);
-  setTranscription("");
-  setAiFeedback("");
-  
-  try {
-    const formData = new FormData();
-    formData.append("audio", audioBlob, "answer.webm");
-    formData.append("questionText", currentQuestion.text);
+
+  const processAudio = async () => {
+    if (!audioBlob) return;
     
-    const token = localStorage.getItem("token");
-    const response = await fetch(`${API_BASE}/answers/submit-audio`, {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${token}`
-      },
-      body: formData
-    });
+    setProcessing(true);
+    setTranscription("");
+    setAiFeedback("");
+    setScore(0);
+    setStrengths([]);
+    setImprovements([]);
     
-    const data = await response.json();
-    
-    if (response.ok) {
-      setTranscription(data.transcription);
-      setAiFeedback(data.feedback);
-    } else {
-      alert(data.message || "Failed to process audio");
+    try {
+      const formData = new FormData();
+      formData.append("audio", audioBlob, "answer.webm");
+      formData.append("questionText", currentQuestion.text);
+      
+      const token = localStorage.getItem("token");
+      const response = await fetch(`${API_BASE}/answers/submit-audio`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${token}`
+        },
+        body: formData
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok) {
+        setTranscription(data.transcription);
+        setAiFeedback(data.feedback);
+        
+        // ✅ Convert score from 100 to 10 scale
+        const scoreOutOf10 = (data.score / 100) * 10;
+        setScore(scoreOutOf10);
+        
+        setStrengths(data.strengths || []);
+        setImprovements(data.improvements || []);
+      } else {
+        alert(data.message || "Failed to process audio");
+      }
+    } catch (error) {
+      console.error("Processing error:", error);
+      alert("Failed to process audio. Please try again.");
+    } finally {
+      setProcessing(false);
     }
-  } catch (error) {
-    console.error("Processing error:", error);
-    alert("Failed to process audio. Please try again.");
-  } finally {
-    setProcessing(false);
-  }
-};
+  };
 
   const recordAgain = () => {
     setAudioBlob(null);
     setAudioURL(null);
     setTranscription("");
     setAiFeedback("");
+    setScore(0);
+    setStrengths([]);
+    setImprovements([]);
   };
 
   const nextQuestion = () => {
@@ -365,6 +451,17 @@ const processAudio = async () => {
         {/* Response & Feedback */}
         {transcription && (
           <div className="space-y-6">
+            {/* ✅ NEW: Score Display Card */}
+            <div className="bg-white rounded-2xl shadow-lg p-8">
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  <h3 className="text-xl font-bold text-gray-800 mb-2">Your Score</h3>
+                  <p className="text-gray-600">Based on content, structure, and delivery</p>
+                </div>
+                <CircularScore score={score} maxScore={10} />
+              </div>
+            </div>
+
             {/* Your Response */}
             <div className="bg-white rounded-2xl shadow-lg p-8">
               <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center space-x-2">
@@ -374,12 +471,44 @@ const processAudio = async () => {
               <p className="text-gray-700 leading-relaxed">{transcription}</p>
             </div>
 
+            {/* Strengths & Improvements */}
+            <div className="grid md:grid-cols-2 gap-6">
+              {/* Strengths */}
+              <div className="bg-green-50 rounded-2xl shadow-lg p-6 border border-green-200">
+                <h3 className="text-lg font-bold text-green-800 mb-4 flex items-center space-x-2">
+                  <CheckCircle className="text-green-600" size={20} />
+                  <span>Strengths</span>
+                </h3>
+                <ul className="space-y-2">
+                  {strengths.map((strength, idx) => (
+                    <li key={idx} className="flex items-start space-x-2">
+                      <span className="text-green-600 mt-1">✓</span>
+                      <span className="text-gray-700">{strength}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              {/* Improvements */}
+              <div className="bg-blue-50 rounded-2xl shadow-lg p-6 border border-blue-200">
+                <h3 className="text-lg font-bold text-blue-800 mb-4 flex items-center space-x-2">
+                  <ArrowRight className="text-blue-600" size={20} />
+                  <span>Areas to Improve</span>
+                </h3>
+                <ul className="space-y-2">
+                  {improvements.map((improvement, idx) => (
+                    <li key={idx} className="flex items-start space-x-2">
+                      <span className="text-blue-600 mt-1">→</span>
+                      <span className="text-gray-700">{improvement}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+
             {/* AI Feedback */}
-            <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-2xl shadow-lg p-8 border border-green-200">
-              <h3 className="text-xl font-bold text-green-800 mb-4 flex items-center space-x-2">
-                <CheckCircle className="text-green-600" size={24} />
-                <span>AI Feedback</span>
-              </h3>
+            <div className="bg-gradient-to-r from-purple-50 to-indigo-50 rounded-2xl shadow-lg p-8 border border-purple-200">
+              <h3 className="text-xl font-bold text-purple-800 mb-4">Overall Feedback</h3>
               <p className="text-gray-800 leading-relaxed">{aiFeedback}</p>
             </div>
 

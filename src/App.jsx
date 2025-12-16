@@ -10,6 +10,7 @@ import QuickPractice from "./Components/QuickPractice";
 import LiveInterview from "./Components/LiveInterview";
 import ProtectedRoute from "./Components/ProtectedRoute";
 import AptitudePractice from "./Components/AptitudePractice";
+import ResumeAnalysis from "./Components/ResumeAnalysis";
 
 function App() {
   return (
@@ -56,6 +57,16 @@ function App() {
             </ProtectedRoute>
           } 
         />
+
+        <Route 
+  path="/resume-analysis/:resumeId" 
+  element={
+    <ProtectedRoute>
+      <ResumeAnalysis />
+    </ProtectedRoute>
+  } 
+/>
+
       </Routes>
     </Router>
   );
