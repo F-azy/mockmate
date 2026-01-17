@@ -14,7 +14,6 @@ const Signin = () => {
     setError("");
     setIsLoading(true);
 
-    // Client-side validation
     if (!email.trim()) {
       setError("Please enter your email address");
       setIsLoading(false);
@@ -42,11 +41,9 @@ const Signin = () => {
         throw new Error(data.message || "Login failed");
       }
 
-      // Store token and user info
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
 
-      // Redirect to dashboard
       window.location.href = "/dashboard";
 
     } catch (err) {
@@ -58,24 +55,20 @@ const Signin = () => {
 
   return (
     <div className="min-h-screen flex relative overflow-hidden">
-      {/* Background Effects */}
       <div className="absolute inset-0 bg-gradient-to-br from-purple-50 via-blue-50 to-pink-50"></div>
       <div className="absolute top-0 left-0 w-96 h-96 bg-purple-300/20 rounded-full blur-3xl"></div>
       <div className="absolute bottom-0 right-0 w-96 h-96 bg-blue-300/20 rounded-full blur-3xl"></div>
 
-      {/* Left Side - Enhanced Gradient with Interactive Elements */}
       <div
         className="hidden lg:flex lg:w-1/2 flex-col justify-center items-center text-white p-12 relative overflow-hidden"
         style={{
           background: "linear-gradient(135deg, #2a003f, #3b0a77, #001f3f, #4c1d95)"
         }}
       >
-        {/* Floating Elements */}
         <div className="absolute top-10 left-10 w-20 h-20 bg-white/10 rounded-full backdrop-blur-sm animate-pulse"></div>
         <div className="absolute top-1/2 right-10 w-16 h-16 bg-pink-400/20 rounded-full backdrop-blur-sm animate-pulse delay-1000"></div>
         <div className="absolute bottom-20 left-20 w-24 h-24 bg-blue-400/20 rounded-full backdrop-blur-sm animate-pulse delay-2000"></div>
 
-        {/* Main Content */}
         <div className="relative z-10 text-center max-w-md">
           <div className="mb-8">
             <div className="flex items-center justify-center mb-4">
@@ -94,7 +87,6 @@ const Signin = () => {
             </p>
           </div>
 
-          {/* Stats/Benefits */}
           <div className="grid grid-cols-1 gap-4 mt-12">
             <div className="flex items-center space-x-3 bg-white/10 backdrop-blur-sm rounded-lg p-4">
               <div className="w-10 h-10 bg-green-500/20 rounded-full flex items-center justify-center">
@@ -129,10 +121,8 @@ const Signin = () => {
         </div>
       </div>
 
-      {/* Right Side - Enhanced Signin Form */}
       <div className="w-full lg:w-1/2 flex flex-col justify-center items-center p-8 lg:p-12 relative z-10">
         <div className="w-full max-w-md">
-          {/* Header */}
           <div className="text-center mb-8">
             <div className="flex items-center justify-center mb-4 lg:hidden">
               <div className="text-3xl font-bold text-gray-900">
@@ -143,10 +133,8 @@ const Signin = () => {
             <p className="text-lg text-gray-600">Sign in to continue your practice</p>
           </div>
 
-          {/* Form */}
           <div className="space-y-6">
             <div className="bg-white/80 backdrop-blur-sm p-8 rounded-2xl shadow-xl border border-white/20">
-              {/* Email Field */}
               <div className="space-y-2 mb-6">
                 <label className="block text-gray-700 font-semibold text-sm">Email Address</label>
                 <div className="relative">
@@ -162,7 +150,6 @@ const Signin = () => {
                 </div>
               </div>
 
-              {/* Password Field */}
               <div className="space-y-2 mb-4">
                 <div className="flex justify-between items-center">
                   <label className="block text-gray-700 font-semibold text-sm">Password</label>
@@ -190,7 +177,6 @@ const Signin = () => {
                 </div>
               </div>
 
-              {/* Submit Button */}
               <button
                 type="button"
                 onClick={handleSubmit}
@@ -216,7 +202,6 @@ const Signin = () => {
                 <div className="absolute inset-0 bg-white/20 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></div>
               </button>
 
-              {/* Error Message */}
               {error && (
                 <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center space-x-2">
                   <AlertCircle size={18} className="text-red-600 flex-shrink-0" />
@@ -234,7 +219,6 @@ const Signin = () => {
             </div>
           </div>
 
-          {/* Security Notice */}
           <div className="mt-6 flex items-center justify-center space-x-2 text-xs text-gray-500">
             <Shield size={14} />
             <span>Your connection is secure and encrypted</span>

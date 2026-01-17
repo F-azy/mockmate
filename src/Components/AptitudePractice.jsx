@@ -1,14 +1,22 @@
 import React, { useState, useEffect } from "react";
-import { CheckCircle, XCircle, ArrowRight, RefreshCw, Award, Clock } from "lucide-react";
-import DashboardNavbar from "./DashboardNavbar";
-import { Link } from "react-router-dom";
+import { CheckCircle, XCircle, ArrowRight, RefreshCw, Award, Clock, Loader, Sparkles } from "lucide-react";
 
 const API_BASE = "http://localhost:5000/api";
+
+const DashboardNavbar = ({ userName }) => (
+  <nav className="flex justify-between items-center px-6 py-4 bg-white border-b border-gray-200 shadow-sm">
+    <div className="text-2xl font-bold text-gray-800">MockMate</div>
+    <div className="flex items-center space-x-2">
+      <span className="text-gray-800 font-semibold">{userName}</span>
+    </div>
+  </nav>
+);
 
 const AptitudePractice = () => {
   const [userName, setUserName] = useState("User");
   const [jobRole, setJobRole] = useState("");
   const [setupComplete, setSetupComplete] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
   
   // Questions
   const [questions, setQuestions] = useState([]);
@@ -16,7 +24,7 @@ const AptitudePractice = () => {
   const [selectedAnswer, setSelectedAnswer] = useState(null);
   const [showResult, setShowResult] = useState(false);
   const [score, setScore] = useState(0);
-  const [timeLeft, setTimeLeft] = useState(60); // 60 seconds per question
+  const [timeLeft, setTimeLeft] = useState(60);
   const [quizComplete, setQuizComplete] = useState(false);
 
   const currentQuestion = questions[currentIndex];
@@ -32,41 +40,46 @@ const AptitudePractice = () => {
       const timer = setTimeout(() => setTimeLeft(timeLeft - 1), 1000);
       return () => clearTimeout(timer);
     } else if (timeLeft === 0 && !showResult) {
-      handleSubmit(); // Auto-submit when time runs out
+      handleSubmit();
     }
   }, [timeLeft, setupComplete, showResult, quizComplete]);
 
-// Generate aptitude questions from backend
-const generateQuestions = async () => {
-  if (!jobRole.trim()) return;
-  
-  try {
-    const token = localStorage.getItem("token");
-    const response = await fetch(
-      `${API_BASE}/questions/aptitude?jobRole=${encodeURIComponent(jobRole)}&count=10`,
-      {
-        headers: {
-          "Authorization": `Bearer ${token}`
-        }
-      }
-    );
-
-    const data = await response.json();
+  // Generate aptitude questions from backend using Groq
+  const generateQuestions = async () => {
+    if (!jobRole.trim()) return;
     
-    if (response.ok) {
-      setQuestions(data.questions);
-      setSetupComplete(true);
-      setCurrentIndex(0);
-      setScore(0);
-      setTimeLeft(60);
-    } else {
-      alert(data.message || "Failed to generate questions");
+    try {
+      setIsGenerating(true);
+      
+      const token = localStorage.getItem("token");
+      const response = await fetch(
+        `${API_BASE}/questions/aptitude?jobRole=${encodeURIComponent(jobRole)}&count=10`,
+        {
+          headers: {
+            "Authorization": `Bearer ${token}`
+          }
+        }
+      );
+
+      const data = await response.json();
+      
+      if (response.ok) {
+        setQuestions(data.questions);
+        setSetupComplete(true);
+        setCurrentIndex(0);
+        setScore(0);
+        setTimeLeft(60);
+      } else {
+        alert(data.message || "Failed to generate questions");
+      }
+    } catch (error) {
+      console.error("Error generating questions:", error);
+      alert("Failed to generate questions. Please try again.");
+    } finally {
+      setIsGenerating(false);
     }
-  } catch (error) {
-    console.error("Error generating questions:", error);
-    alert("Failed to generate questions. Please try again.");
-  }
-};
+  };
+
   const handleAnswerSelect = (answerIndex) => {
     if (!showResult) {
       setSelectedAnswer(answerIndex);
@@ -102,7 +115,46 @@ const generateQuestions = async () => {
     setJobRole("");
   };
 
-  // Setup Screen
+  if (isGenerating) {
+    return (
+      <div className="min-h-screen bg-gray-100">
+        <DashboardNavbar userName={userName} />
+
+        <div className="p-8 max-w-4xl mx-auto">
+          <div className="bg-white rounded-2xl shadow-lg p-12">
+            <div className="text-center">
+              <div className="w-20 h-20 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                <Sparkles className="w-10 h-10 text-purple-600 animate-pulse" />
+              </div>
+              <h1 className="text-3xl font-bold text-gray-800 mb-3">
+                Generating Your Questions
+              </h1>
+              <p className="text-gray-600 mb-8">
+                Our AI is creating personalized aptitude questions for <span className="font-semibold text-purple-600">{jobRole}</span>...
+              </p>
+
+              <div className="flex items-center justify-center space-x-2 mb-8">
+                <div className="w-3 h-3 bg-purple-600 rounded-full animate-bounce" style={{ animationDelay: '0s' }}></div>
+                <div className="w-3 h-3 bg-purple-600 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                <div className="w-3 h-3 bg-purple-600 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></div>
+              </div>
+
+              <div className="space-y-2 text-sm text-gray-500">
+                <p>⚡ Analyzing role requirements...</p>
+                <p>🎯 Creating relevant questions...</p>
+                <p>✨ Preparing your test...</p>
+              </div>
+
+              <div className="mt-8 w-full bg-gray-200 rounded-full h-2">
+                <div className="bg-purple-600 h-2 rounded-full animate-pulse" style={{ width: '70%' }}></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (!setupComplete) {
     return (
       <div className="min-h-screen bg-gray-100">
@@ -111,7 +163,7 @@ const generateQuestions = async () => {
         <div className="p-8 max-w-4xl mx-auto">
           <div className="text-center mb-8">
             <h1 className="text-4xl font-bold text-gray-800 mb-3">Aptitude Practice</h1>
-            <p className="text-lg text-gray-600">Test your knowledge with MCQ-based questions</p>
+            <p className="text-lg text-gray-600">Test your knowledge with AI-generated MCQ questions</p>
           </div>
 
           <div className="bg-white rounded-2xl shadow-lg p-8 mb-6">
@@ -134,7 +186,8 @@ const generateQuestions = async () => {
               disabled={!jobRole.trim()}
               className="w-full py-4 bg-gradient-to-r from-purple-500 to-pink-600 text-white rounded-xl font-bold text-lg hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
             >
-              <span>Start Aptitude Test</span>
+              <Sparkles size={20} />
+              <span>Generate AI Questions</span>
               <ArrowRight size={20} />
             </button>
 
@@ -148,23 +201,30 @@ const generateQuestions = async () => {
                 <p className="text-sm text-gray-600">Per Question</p>
               </div>
               <div className="p-4 bg-green-50 rounded-lg">
-                <p className="text-2xl font-bold text-green-600">MCQ</p>
-                <p className="text-sm text-gray-600">Format</p>
+                <p className="text-2xl font-bold text-green-600">AI</p>
+                <p className="text-sm text-gray-600">Generated</p>
               </div>
+            </div>
+
+            <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-sm text-blue-800 flex items-center">
+                <Sparkles size={16} className="mr-2" />
+                <span>Questions are uniquely generated by AI based on your target role!</span>
+              </p>
             </div>
           </div>
 
-          <Link to="/quick-practice">
-            <button className="w-full py-3 bg-white border-2 border-gray-300 text-gray-700 rounded-xl font-semibold hover:bg-gray-50">
-              ← Back to Interview Practice
-            </button>
-          </Link>
+          <button 
+            onClick={() => window.history.back()}
+            className="w-full py-3 bg-white border-2 border-gray-300 text-gray-700 rounded-xl font-semibold hover:bg-gray-50"
+          >
+            ← Back to Interview Practice
+          </button>
         </div>
       </div>
     );
   }
 
-  // Quiz Complete Screen
   if (quizComplete) {
     const percentage = (score / questions.length) * 100;
     
@@ -205,11 +265,12 @@ const generateQuestions = async () => {
                 <span>Take Another Test</span>
               </button>
 
-              <Link to="/dashboard">
-                <button className="w-full py-3 bg-white border-2 border-gray-300 text-gray-700 rounded-xl font-semibold hover:bg-gray-50">
-                  Back to Dashboard
-                </button>
-              </Link>
+              <button 
+                onClick={() => window.history.back()}
+                className="w-full py-3 bg-white border-2 border-gray-300 text-gray-700 rounded-xl font-semibold hover:bg-gray-50"
+              >
+                Back to Dashboard
+              </button>
             </div>
           </div>
         </div>
@@ -217,7 +278,6 @@ const generateQuestions = async () => {
     );
   }
 
-  // Question Screen
   return (
     <div className="min-h-screen bg-gray-100">
       <DashboardNavbar userName={userName} />
@@ -234,7 +294,7 @@ const generateQuestions = async () => {
               <span className={`text-lg font-bold ${timeLeft <= 10 ? "text-red-600" : "text-gray-800"}`}>
                 {timeLeft}s
               </span>
-              </div>
+            </div>
           </div>
           <div className="w-full bg-gray-200 rounded-full h-2">
             <div 
@@ -243,94 +303,105 @@ const generateQuestions = async () => {
             ></div>
           </div>
         </div>
-        {/* Question Card */}
-    <div className="bg-white rounded-2xl shadow-lg p-8 mb-6">
-      <div className="flex items-center justify-between mb-6">
-        <span className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm font-medium">
-          {jobRole}
-        </span>
-        <span className="text-sm text-gray-600">Score: {score}/{currentIndex + (showResult ? 1 : 0)}</span>
-      </div>
 
-      <h2 className="text-2xl font-bold text-gray-800 mb-8">
-        {currentQuestion?.question}
-      </h2>
+        <div className="bg-white rounded-2xl shadow-lg p-8 mb-6">
+          <div className="flex items-center justify-between mb-6">
+            <span className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm font-medium flex items-center">
+              <Sparkles size={14} className="mr-1" />
+              {jobRole}
+            </span>
+            <span className="text-sm text-gray-600">Score: {score}/{currentIndex + (showResult ? 1 : 0)}</span>
+          </div>
 
-      {/* Options */}
-      <div className="space-y-4 mb-6">
-        {currentQuestion?.options.map((option, index) => {
-          const isSelected = selectedAnswer === index;
-          const isCorrect = index === currentQuestion.correctAnswer;
-          const showCorrect = showResult && isCorrect;
-          const showWrong = showResult && isSelected && !isCorrect;
+          <h2 className="text-2xl font-bold text-gray-800 mb-8">
+            {currentQuestion?.question}
+          </h2>
 
-          return (
-            <button
-              key={index}
-              onClick={() => handleAnswerSelect(index)}
-              disabled={showResult}
-              className={`w-full p-4 rounded-xl border-2 text-left transition-all ${
-                showCorrect
-                  ? "border-green-500 bg-green-50"
-                  : showWrong
-                  ? "border-red-500 bg-red-50"
-                  : isSelected
-                  ? "border-purple-500 bg-purple-50"
-                  : "border-gray-200 hover:border-purple-300 bg-white"
-              } ${showResult ? "cursor-not-allowed" : "cursor-pointer"}`}
-            >
-              <div className="flex items-center justify-between">
-                <span className="font-medium text-gray-800">{option}</span>
-                {showCorrect && <CheckCircle className="text-green-600" size={24} />}
-                {showWrong && <XCircle className="text-red-600" size={24} />}
-              </div>
-            </button>
-          );
-        })}
-      </div>
+          {currentQuestion?.difficulty && (
+            <div className="mb-4">
+              <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                currentQuestion.difficulty === 'easy' ? 'bg-green-100 text-green-700' :
+                currentQuestion.difficulty === 'medium' ? 'bg-yellow-100 text-yellow-700' :
+                'bg-red-100 text-red-700'
+              }`}>
+                {currentQuestion.difficulty.toUpperCase()}
+              </span>
+            </div>
+          )}
 
-      {/* Explanation (shown after submission) */}
-      {showResult && (
-        <div className={`p-4 rounded-xl ${
-          selectedAnswer === currentQuestion.correctAnswer
-            ? "bg-green-50 border border-green-200"
-            : "bg-blue-50 border border-blue-200"
-        }`}>
-          <p className="font-semibold text-gray-800 mb-2">Explanation:</p>
-          <p className="text-gray-700">{currentQuestion.explanation}</p>
+          <div className="space-y-4 mb-6">
+            {currentQuestion?.options.map((option, index) => {
+              const isSelected = selectedAnswer === index;
+              const isCorrect = index === currentQuestion.correctAnswer;
+              const showCorrect = showResult && isCorrect;
+              const showWrong = showResult && isSelected && !isCorrect;
+
+              return (
+                <button
+                  key={index}
+                  onClick={() => handleAnswerSelect(index)}
+                  disabled={showResult}
+                  className={`w-full p-4 rounded-xl border-2 text-left transition-all ${
+                    showCorrect
+                      ? "border-green-500 bg-green-50"
+                      : showWrong
+                      ? "border-red-500 bg-red-50"
+                      : isSelected
+                      ? "border-purple-500 bg-purple-50"
+                      : "border-gray-200 hover:border-purple-300 bg-white"
+                  } ${showResult ? "cursor-not-allowed" : "cursor-pointer"}`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium text-gray-800">{option}</span>
+                    {showCorrect && <CheckCircle className="text-green-600" size={24} />}
+                    {showWrong && <XCircle className="text-red-600" size={24} />}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+
+          {showResult && (
+            <div className={`p-4 rounded-xl ${
+              selectedAnswer === currentQuestion.correctAnswer
+                ? "bg-green-50 border border-green-200"
+                : "bg-blue-50 border border-blue-200"
+            }`}>
+              <p className="font-semibold text-gray-800 mb-2">Explanation:</p>
+              <p className="text-gray-700">{currentQuestion.explanation}</p>
+            </div>
+          )}
         </div>
-      )}
-    </div>
 
-    {/* Action Buttons */}
-    <div className="flex items-center justify-between">
-      <button
-        onClick={() => setSetupComplete(false)}
-        className="px-6 py-3 bg-white border-2 border-gray-300 text-gray-700 rounded-xl font-semibold hover:bg-gray-50"
-      >
-        Exit Quiz
-      </button>
+        <div className="flex items-center justify-between">
+          <button
+            onClick={() => setSetupComplete(false)}
+            className="px-6 py-3 bg-white border-2 border-gray-300 text-gray-700 rounded-xl font-semibold hover:bg-gray-50"
+          >
+            Exit Quiz
+          </button>
 
-      {!showResult ? (
-        <button
-          onClick={handleSubmit}
-          disabled={selectedAnswer === null}
-          className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          Submit Answer
-        </button>
-      ) : (
-        <button
-          onClick={nextQuestion}
-          className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-semibold flex items-center space-x-2"
-        >
-          <span>{currentIndex < questions.length - 1 ? "Next Question" : "View Results"}</span>
-          <ArrowRight size={20} />
-        </button>
-      )}
+          {!showResult ? (
+            <button
+              onClick={handleSubmit}
+              disabled={selectedAnswer === null}
+              className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Submit Answer
+            </button>
+          ) : (
+            <button
+              onClick={nextQuestion}
+              className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-semibold flex items-center space-x-2"
+            >
+              <span>{currentIndex < questions.length - 1 ? "Next Question" : "View Results"}</span>
+              <ArrowRight size={20} />
+            </button>
+          )}
+        </div>
+      </div>
     </div>
-  </div>
-</div>
-);
+  );
 };
+
 export default AptitudePractice;

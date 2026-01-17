@@ -1,7 +1,6 @@
 import React from "react";
 import { Star, Zap, Heart, MessageSquare, ArrowRight, CheckCircle, Users, Shield, Clock } from "lucide-react";
 
-// Mock Navbar component
 const Navbar = () => {
   return (
     <nav className="flex justify-between items-center px-6 py-4 bg-white/5 backdrop-blur-sm border-b border-white/10">
@@ -23,14 +22,12 @@ const Navbar = () => {
 const Home = () => {
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Hero Section */}
       <div
         className="min-h-screen flex flex-col relative overflow-hidden"
         style={{
           background: "linear-gradient(135deg, #2a003f, #3b0a77, #001f3f, #4c1d95)"
         }}
       >
-        {/* Animated background elements */}
         <div className="absolute inset-0 overflow-hidden">
           <div className="absolute -top-40 -right-40 w-80 h-80 bg-purple-500/20 rounded-full blur-3xl animate-pulse"></div>
           <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-blue-500/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
@@ -40,7 +37,6 @@ const Home = () => {
         <Navbar />
         
         <div className="flex flex-col items-center justify-center flex-1 text-center text-white px-6 relative z-10">
-          {/* AI powered badge */}
           <div className="mb-8 animate-fade-in">
             <p className="text-lg border border-purple-300/30 px-4 py-2 rounded-full flex items-center space-x-2 bg-white/10 backdrop-blur-sm hover:bg-white/20 transition-all duration-300 hover:scale-105">
               <Star size={18} className="text-yellow-300 animate-pulse" />
@@ -48,7 +44,6 @@ const Home = () => {
             </p>
           </div>
 
-          {/* Main Heading with enhanced styling */}
           <h1 className="text-6xl md:text-7xl font-black mb-6 drop-shadow-2xl leading-tight animate-fade-in-up">
             Ace your{" "}
             <span className="bg-gradient-to-r from-pink-400 via-purple-400 to-blue-400 bg-clip-text text-transparent animate-gradient">
@@ -57,13 +52,11 @@ const Home = () => {
             Interview
           </h1>
 
-          {/* Enhanced subtext */}
           <p className="max-w-3xl mb-8 text-xl text-white/90 leading-relaxed animate-fade-in-up delay-200">
             Transform your interview anxiety into confidence with AI-generated questions, 
             real-time feedback, and personalized practice sessions.
           </p>
 
-          {/* Enhanced CTA Button */}
           <div className="mb-8 animate-fade-in-up delay-400">
             <a
               href="/signup"
@@ -78,7 +71,6 @@ const Home = () => {
             </a>
           </div>
 
-          {/* Enhanced trust badges */}
           <div className="flex flex-col md:flex-row items-center justify-center gap-4 text-sm text-white/90 animate-fade-in-up delay-600">
             <div className="flex items-center space-x-2 border border-purple-300/30 px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm hover:bg-white/20 transition-colors">
               <CheckCircle size={16} className="text-green-400" />
@@ -96,10 +88,8 @@ const Home = () => {
         </div>
       </div>
 
-      {/* Interview Anxiety Section */}
       <div className="py-20 px-6 bg-gradient-to-b from-gray-50 to-white">
         <div className="max-w-6xl mx-auto text-center">
-          {/* Main anxiety statement */}
           <div className="mb-12">
             <h2 className="text-5xl font-bold text-gray-900 mb-6 leading-tight">
               Interview Anxiety is{" "}
@@ -112,9 +102,7 @@ const Home = () => {
             </p>
           </div>
 
-          {/* Three main problem cards */}
           <div className="grid md:grid-cols-3 gap-8 mt-16">
-            {/* Lack of Practice Card */}
             <div className="group bg-white rounded-2xl p-8 shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 border border-gray-100">
               <div className="w-16 h-16 bg-gradient-to-br from-red-400 to-red-600 rounded-2xl flex items-center justify-center mb-6 mx-auto group-hover:scale-110 transition-transform">
                 <Zap className="text-white" size={32} />
@@ -133,7 +121,6 @@ const Home = () => {
               </div>
             </div>
 
-            {/* Social Anxiety Card */}
             <div className="group bg-white rounded-2xl p-8 shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 border border-gray-100">
               <div className="w-16 h-16 bg-gradient-to-br from-orange-400 to-orange-600 rounded-2xl flex items-center justify-center mb-6 mx-auto group-hover:scale-110 transition-transform">
                 <Heart className="text-white" size={32} />

@@ -17,12 +17,9 @@ const LiveInterview = () => {
 
   return (
     <div className="min-h-screen bg-gray-100">
-      {/* Navbar */}
       <DashboardNavbar userName="John" />
 
-      {/* Content */}
       <div className="p-8 max-w-6xl mx-auto">
-        {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-2xl font-bold text-gray-800">Live Interview</h1>
@@ -38,7 +35,6 @@ const LiveInterview = () => {
           </Link>
         </div>
 
-        {/* Setup Card */}
         <div className="bg-white p-6 rounded-2xl shadow-md mb-6">
           <h3 className="text-sm font-semibold text-purple-500 mb-2">
             Live Interview Setup
@@ -71,7 +67,6 @@ const LiveInterview = () => {
           </p>
         </div>
 
-        {/* Interview Console */}
         <div className="bg-white p-6 rounded-2xl shadow-md mb-6">
           <h2 className="text-lg font-bold text-gray-800 mb-3">
             Interview Console
@@ -91,7 +86,6 @@ const LiveInterview = () => {
           )}
         </div>
 
-        {/* Live Metrics */}
         {interviewStarted && (
           <div className="bg-white p-6 rounded-2xl shadow-md mb-8">
             <h3 className="text-sm font-semibold text-gray-700 mb-3">
@@ -123,7 +117,6 @@ const LiveInterview = () => {
           </div>
         )}
 
-        {/* Footer Info */}
         <div className="text-sm text-gray-600">
           <p className="mb-2">
             Tips: Maintain eye contact, speak clearly, and structure answers

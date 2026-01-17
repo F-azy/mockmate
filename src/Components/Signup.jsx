@@ -19,7 +19,6 @@ const Signup = () => {
 
     console.log("🔄 Starting signup process...");
 
-    // Client-side validation
     if (!name.trim()) {
       setError("Please enter your full name");
       setIsLoading(false);
@@ -61,14 +60,12 @@ const Signup = () => {
         throw new Error(data.message || "Registration failed");
       }
 
-      // Store token and user info
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
       
       console.log("✅ Signup successful!");
       setSuccess("Account created successfully! Redirecting...");
       
-      // Redirect to dashboard after 1.5 seconds
       setTimeout(() => {
         window.location.href = "/dashboard";
       }, 1500);
@@ -83,24 +80,20 @@ const Signup = () => {
 
   return (
     <div className="min-h-screen flex relative overflow-hidden">
-      {/* Background Effects */}
       <div className="absolute inset-0 bg-gradient-to-br from-purple-50 via-blue-50 to-pink-50"></div>
       <div className="absolute top-0 left-0 w-96 h-96 bg-purple-300/20 rounded-full blur-3xl"></div>
       <div className="absolute bottom-0 right-0 w-96 h-96 bg-blue-300/20 rounded-full blur-3xl"></div>
 
-      {/* Left Side - Enhanced Gradient with Interactive Elements */}
       <div
         className="hidden lg:flex lg:w-1/2 flex-col justify-center items-center text-white p-12 relative overflow-hidden"
         style={{
           background: "linear-gradient(135deg, #2a003f, #3b0a77, #001f3f, #4c1d95)"
         }}
       >
-        {/* Floating Elements */}
         <div className="absolute top-10 left-10 w-20 h-20 bg-white/10 rounded-full backdrop-blur-sm animate-pulse"></div>
         <div className="absolute top-1/2 right-10 w-16 h-16 bg-pink-400/20 rounded-full backdrop-blur-sm animate-pulse delay-1000"></div>
         <div className="absolute bottom-20 left-20 w-24 h-24 bg-blue-400/20 rounded-full backdrop-blur-sm animate-pulse delay-2000"></div>
 
-        {/* Main Content */}
         <div className="relative z-10 text-center max-w-md">
           <div className="mb-8">
             <div className="flex items-center justify-center mb-4">
@@ -119,7 +112,6 @@ const Signup = () => {
             </p>
           </div>
 
-          {/* Stats/Benefits */}
           <div className="grid grid-cols-1 gap-4 mt-12">
             <div className="flex items-center space-x-3 bg-white/10 backdrop-blur-sm rounded-lg p-4">
               <div className="w-10 h-10 bg-green-500/20 rounded-full flex items-center justify-center">
@@ -154,10 +146,8 @@ const Signup = () => {
         </div>
       </div>
 
-      {/* Right Side - Enhanced Signup Form */}
       <div className="w-full lg:w-1/2 flex flex-col justify-center items-center p-8 lg:p-12 relative z-10">
         <div className="w-full max-w-md">
-          {/* Header */}
           <div className="text-center mb-8">
             <div className="flex items-center justify-center mb-4 lg:hidden">
               <div className="text-3xl font-bold text-gray-900">
@@ -168,7 +158,6 @@ const Signup = () => {
             <p className="text-lg text-gray-600">Start your interview practice journey</p>
           </div>
 
-          {/* Trust Badges */}
           <div className="flex flex-wrap justify-center gap-3 mb-8">
             <div className="flex items-center space-x-2 bg-green-50 text-green-700 px-3 py-1 rounded-full text-sm font-medium">
               <CheckCircle size={16} />
@@ -180,10 +169,8 @@ const Signup = () => {
             </div>
           </div>
 
-          {/* Form */}
           <div className="space-y-6">
             <div className="bg-white/80 backdrop-blur-sm p-8 rounded-2xl shadow-xl border border-white/20">
-              {/* Name Field */}
               <div className="space-y-2 mb-6">
                 <label className="block text-gray-700 font-semibold text-sm">Full Name</label>
                 <div className="relative">
@@ -199,7 +186,6 @@ const Signup = () => {
                 </div>
               </div>
 
-              {/* Email Field */}
               <div className="space-y-2 mb-6">
                 <label className="block text-gray-700 font-semibold text-sm">Email Address</label>
                 <div className="relative">
@@ -215,7 +201,6 @@ const Signup = () => {
                 </div>
               </div>
 
-              {/* Password Field */}
               <div className="space-y-2 mb-6">
                 <label className="block text-gray-700 font-semibold text-sm">Password</label>
                 <div className="relative">
@@ -241,7 +226,6 @@ const Signup = () => {
                 </p>
               </div>
 
-              {/* Submit Button */}
               <button
                 type="button"
                 onClick={handleSubmit}
@@ -267,14 +251,12 @@ const Signup = () => {
                 <div className="absolute inset-0 bg-white/20 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></div>
               </button>
 
-              {/* Error Message */}
               {error && (
                 <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
                   <p className="text-red-600 text-sm font-medium">{error}</p>
                 </div>
               )}
 
-              {/* Success Message */}
               {success && (
                 <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg flex items-center space-x-2">
                   <CheckCircle size={18} className="text-green-600" />
@@ -282,7 +264,6 @@ const Signup = () => {
                 </div>
               )}
 
-              {/* Sign In Link */}
               <p className="text-center text-sm mt-6 text-gray-600">
                 Already have an account?{" "}
                 <a href="/signin" className="text-purple-600 font-semibold hover:text-purple-700 transition-colors">
@@ -292,7 +273,6 @@ const Signup = () => {
             </div>
           </div>
 
-          {/* Terms */}
           <p className="text-center text-xs text-gray-500 mt-6">
             By creating an account, you agree to our{" "}
             <a href="#" className="text-purple-600 hover:underline">Terms of Service</a>{" "}

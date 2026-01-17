@@ -20,7 +20,6 @@ const Dashboard = () => {
   const [showAnalysis, setShowAnalysis] = useState(false);
 const [selectedResumeId, setSelectedResumeId] = useState(null);
 
-// Add this function to handle analyze click
 const handleAnalyzeResume = (resumeId) => {
   setSelectedResumeId(resumeId);
   setShowAnalysis(true);
@@ -28,7 +27,6 @@ const handleAnalyzeResume = (resumeId) => {
 
 
 
-  // Get user info from localStorage
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem("user"));
     if (user) {
@@ -123,14 +121,11 @@ const handleAnalyzeResume = (resumeId) => {
 
       setUploadSuccess("Resume uploaded successfully!");
       
-      // Analyze the resume
       const resumeId = data.resume.id;
       await analyzeResume(resumeId);
       
-      // Refresh resume list
       await fetchMyResumes();
       
-      // Close modal after 2 seconds
       setTimeout(() => {
         setShowUploadModal(false);
         setSelectedFile(null);

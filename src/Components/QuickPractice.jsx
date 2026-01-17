@@ -5,23 +5,21 @@ import { Link } from "react-router-dom";
 
 const API_BASE = "http://localhost:5000/api";
 
-// ✅ NEW: Circular Score Component
 const CircularScore = ({ score, maxScore = 10 }) => {
   const percentage = (score / maxScore) * 100;
   const circumference = 2 * Math.PI * 45; // radius = 45
   const strokeDashoffset = circumference - (percentage / 100) * circumference;
   
-  // Determine color based on score
-  let color = '#ef4444'; // red for low scores
+  let color = '#ef4444'; 
   let bgColor = '#fee2e2';
   let textColor = 'text-red-600';
   
   if (score >= 7) {
-    color = '#22c55e'; // green for good scores
+    color = '#22c55e'; 
     bgColor = '#dcfce7';
     textColor = 'text-green-600';
   } else if (score >= 5) {
-    color = '#f59e0b'; // orange for medium scores
+    color = '#f59e0b'; 
     bgColor = '#fef3c7';
     textColor = 'text-orange-600';
   }
@@ -29,7 +27,6 @@ const CircularScore = ({ score, maxScore = 10 }) => {
   return (
     <div className="flex flex-col items-center">
       <div className="relative w-32 h-32">
-        {/* Background circle */}
         <svg className="transform -rotate-90 w-32 h-32">
           <circle
             cx="64"
@@ -39,7 +36,6 @@ const CircularScore = ({ score, maxScore = 10 }) => {
             strokeWidth="8"
             fill="none"
           />
-          {/* Progress circle */}
           <circle
             cx="64"
             cy="64"
@@ -54,7 +50,6 @@ const CircularScore = ({ score, maxScore = 10 }) => {
           />
         </svg>
         
-        {/* Score text in center */}
         <div className="absolute inset-0 flex flex-col items-center justify-center">
           <span className={`text-3xl font-bold ${textColor}`}>
             {score.toFixed(1)}
@@ -63,7 +58,6 @@ const CircularScore = ({ score, maxScore = 10 }) => {
         </div>
       </div>
       
-      {/* Score label */}
       <div className="mt-3 text-center">
         <p className={`text-sm font-semibold ${textColor}`}>
           {score >= 7 ? '🎉 Great!' : score >= 5 ? '👍 Good' : '💪 Keep Practicing'}
@@ -74,33 +68,27 @@ const CircularScore = ({ score, maxScore = 10 }) => {
 };
 
 const QuickPractice = () => {
-  // User info
   const [userName, setUserName] = useState("User");
   
-  // Setup phase
   const [jobRole, setJobRole] = useState("");
   const [setupComplete, setSetupComplete] = useState(false);
   
-  // Questions
   const [questions, setQuestions] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const currentQuestion = questions[currentIndex];
   
-  // Recording states
   const [recording, setRecording] = useState(false);
   const [recTime, setRecTime] = useState(0);
   const [audioBlob, setAudioBlob] = useState(null);
   const [audioURL, setAudioURL] = useState(null);
   
-  // Processing & AI states
   const [processing, setProcessing] = useState(false);
   const [transcription, setTranscription] = useState("");
   const [aiFeedback, setAiFeedback] = useState("");
-  const [score, setScore] = useState(0); // ✅ NEW: Store score
+  const [score, setScore] = useState(0); 
   const [strengths, setStrengths] = useState([]);
   const [improvements, setImprovements] = useState([]);
   
-  // Refs
   const mediaRecorderRef = useRef(null);
   const streamRef = useRef(null);
   const timerRef = useRef(null);
@@ -118,7 +106,6 @@ const QuickPractice = () => {
     };
   }, []);
 
-  // Generate questions from backend
   const generateQuestions = async () => {
     if (!jobRole.trim()) return;
     
@@ -228,7 +215,6 @@ const QuickPractice = () => {
         setTranscription(data.transcription);
         setAiFeedback(data.feedback);
         
-        // ✅ Convert score from 100 to 10 scale
         const scoreOutOf10 = (data.score / 100) * 10;
         setScore(scoreOutOf10);
         
@@ -330,7 +316,6 @@ const QuickPractice = () => {
     );
   }
 
-  // Interview Screen
   return (
     <div className="min-h-screen bg-gray-100">
       <DashboardNavbar userName={userName} />
@@ -357,7 +342,6 @@ const QuickPractice = () => {
           </div>
         </div>
 
-        {/* Question Card */}
         <div className="bg-white rounded-2xl shadow-lg p-8 mb-6">
           <div className="flex items-center justify-between mb-4">
             <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">
@@ -374,7 +358,6 @@ const QuickPractice = () => {
             Take a moment to think about your answer and click the button below to start recording.
           </p>
 
-          {/* Recording Controls */}
           <div className="space-y-4">
             {!audioBlob && !recording && (
               <button
@@ -448,10 +431,8 @@ const QuickPractice = () => {
           </div>
         </div>
 
-        {/* Response & Feedback */}
         {transcription && (
           <div className="space-y-6">
-            {/* ✅ NEW: Score Display Card */}
             <div className="bg-white rounded-2xl shadow-lg p-8">
               <div className="flex items-center justify-between">
                 <div className="flex-1">
@@ -462,7 +443,6 @@ const QuickPractice = () => {
               </div>
             </div>
 
-            {/* Your Response */}
             <div className="bg-white rounded-2xl shadow-lg p-8">
               <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center space-x-2">
                 <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
@@ -471,9 +451,7 @@ const QuickPractice = () => {
               <p className="text-gray-700 leading-relaxed">{transcription}</p>
             </div>
 
-            {/* Strengths & Improvements */}
             <div className="grid md:grid-cols-2 gap-6">
-              {/* Strengths */}
               <div className="bg-green-50 rounded-2xl shadow-lg p-6 border border-green-200">
                 <h3 className="text-lg font-bold text-green-800 mb-4 flex items-center space-x-2">
                   <CheckCircle className="text-green-600" size={20} />
@@ -489,7 +467,6 @@ const QuickPractice = () => {
                 </ul>
               </div>
 
-              {/* Improvements */}
               <div className="bg-blue-50 rounded-2xl shadow-lg p-6 border border-blue-200">
                 <h3 className="text-lg font-bold text-blue-800 mb-4 flex items-center space-x-2">
                   <ArrowRight className="text-blue-600" size={20} />
@@ -506,13 +483,11 @@ const QuickPractice = () => {
               </div>
             </div>
 
-            {/* AI Feedback */}
             <div className="bg-gradient-to-r from-purple-50 to-indigo-50 rounded-2xl shadow-lg p-8 border border-purple-200">
               <h3 className="text-xl font-bold text-purple-800 mb-4">Overall Feedback</h3>
               <p className="text-gray-800 leading-relaxed">{aiFeedback}</p>
             </div>
 
-            {/* Navigation */}
             <div className="flex items-center justify-between">
               <button
                 onClick={recordAgain}

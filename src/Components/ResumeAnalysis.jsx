@@ -15,7 +15,6 @@ import {
 
 const API_BASE = "http://localhost:5000/api";
 
-// Circular Score Component
 const CircularScore = ({ score, label, size = "large" }) => {
   const radius = size === "large" ? 70 : 45;
   const strokeWidth = size === "large" ? 12 : 8;
@@ -45,7 +44,6 @@ const CircularScore = ({ score, label, size = "large" }) => {
           height="100%" 
           viewBox={`0 0 ${viewBoxSize} ${viewBoxSize}`}
         >
-          {/* Background circle */}
           <circle
             cx={center}
             cy={center}
@@ -54,7 +52,6 @@ const CircularScore = ({ score, label, size = "large" }) => {
             strokeWidth={strokeWidth}
             fill="none"
           />
-          {/* Progress circle */}
           <circle
             cx={center}
             cy={center}
@@ -69,7 +66,6 @@ const CircularScore = ({ score, label, size = "large" }) => {
           />
         </svg>
         
-        {/* Score text in center */}
         <div className="absolute inset-0 flex flex-col items-center justify-center">
           <span className={`${size === "large" ? "text-5xl" : "text-3xl"} font-bold`} style={{ color }}>
             {score}
@@ -81,7 +77,6 @@ const CircularScore = ({ score, label, size = "large" }) => {
   );
 };
 
-// Progress Step Component
 const ProgressStep = ({ icon: Icon, label, status }) => {
   const getStatusColor = () => {
     if (status === 'complete') return 'bg-green-500';
@@ -108,12 +103,10 @@ const ProgressStep = ({ icon: Icon, label, status }) => {
 const ResumeAnalysis = ({ resumeId: propResumeId, onBack }) => {
   const [userName, setUserName] = useState("User");
   
-  // Analysis states
   const [isAnalyzing, setIsAnalyzing] = useState(true);
   const [analysis, setAnalysis] = useState(null);
   const [error, setError] = useState("");
   
-  // Progress steps
   const [currentStep, setCurrentStep] = useState(0);
   const steps = [
     { icon: FileText, label: "Parsing your resume", duration: 2000 },
@@ -131,7 +124,6 @@ const ResumeAnalysis = ({ resumeId: propResumeId, onBack }) => {
     }
   }, [propResumeId]);
 
-  // Simulate progress steps
   useEffect(() => {
     if (isAnalyzing && currentStep < steps.length) {
       const timer = setTimeout(() => {
@@ -163,7 +155,6 @@ const ResumeAnalysis = ({ resumeId: propResumeId, onBack }) => {
         throw new Error(data.message || "Analysis failed");
       }
 
-      // Wait for all steps to complete
       await new Promise(resolve => {
         const totalDuration = steps.reduce((sum, step) => sum + step.duration, 0);
         setTimeout(resolve, Math.max(0, totalDuration - (currentStep * 2000)));
@@ -213,7 +204,6 @@ const ResumeAnalysis = ({ resumeId: propResumeId, onBack }) => {
             </p>
           </div>
 
-          {/* Progress Steps */}
           <div className="space-y-6">
             {steps.map((step, index) => (
               <ProgressStep
@@ -229,7 +219,6 @@ const ResumeAnalysis = ({ resumeId: propResumeId, onBack }) => {
             ))}
           </div>
 
-          {/* Progress Bar */}
           <div className="mt-8">
             <div className="w-full bg-gray-200 rounded-full h-2">
               <div 
@@ -252,7 +241,6 @@ const ResumeAnalysis = ({ resumeId: propResumeId, onBack }) => {
 
   return (
     <div className="p-8 max-w-7xl mx-auto">
-      {/* Header */}
       <div className="mb-8">
         <button 
           onClick={onBack}
@@ -265,9 +253,7 @@ const ResumeAnalysis = ({ resumeId: propResumeId, onBack }) => {
         <p className="text-gray-600 mt-2">Detailed insights and recommendations for your resume</p>
       </div>
 
-      {/* Scores Section */}
       <div className="grid md:grid-cols-2 gap-6 mb-8">
-        {/* ATS Score */}
         <div className="bg-white rounded-2xl shadow-lg p-8">
           <h2 className="text-xl font-bold text-gray-800 mb-6 flex items-center">
             <Award className="mr-2 text-purple-600" size={24} />
@@ -285,7 +271,6 @@ const ResumeAnalysis = ({ resumeId: propResumeId, onBack }) => {
           </p>
         </div>
 
-        {/* Overall Score */}
         <div className="bg-white rounded-2xl shadow-lg p-8">
           <h2 className="text-xl font-bold text-gray-800 mb-6 flex items-center">
             <TrendingUp className="mr-2 text-blue-600" size={24} />
@@ -300,7 +285,6 @@ const ResumeAnalysis = ({ resumeId: propResumeId, onBack }) => {
         </div>
       </div>
 
-      {/* Summary */}
       <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl shadow-lg p-8 mb-8 border border-blue-100">
         <h2 className="text-2xl font-bold text-gray-800 mb-4">Overall Assessment</h2>
         <p className="text-gray-700 leading-relaxed text-lg">
@@ -308,7 +292,6 @@ const ResumeAnalysis = ({ resumeId: propResumeId, onBack }) => {
         </p>
       </div>
 
-      {/* Experience Assessment */}
       {analysis.experience && (
         <div className="bg-white rounded-2xl shadow-lg p-8 mb-8">
           <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center">
@@ -332,9 +315,7 @@ const ResumeAnalysis = ({ resumeId: propResumeId, onBack }) => {
         </div>
       )}
 
-      {/* Skills Section */}
       <div className="grid md:grid-cols-2 gap-6 mb-8">
-        {/* Skills Found */}
         <div className="bg-white rounded-2xl shadow-lg p-8">
           <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center">
             <CheckCircle className="mr-2 text-green-600" size={24} />
@@ -352,7 +333,6 @@ const ResumeAnalysis = ({ resumeId: propResumeId, onBack }) => {
           </div>
         </div>
 
-        {/* Missing Skills */}
         <div className="bg-white rounded-2xl shadow-lg p-8">
           <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center">
             <AlertCircle className="mr-2 text-orange-600" size={24} />
@@ -371,7 +351,6 @@ const ResumeAnalysis = ({ resumeId: propResumeId, onBack }) => {
         </div>
       </div>
 
-      {/* Keywords */}
       {analysis.keywords && (
         <div className="grid md:grid-cols-2 gap-6 mb-8">
           <div className="bg-white rounded-2xl shadow-lg p-8">
@@ -410,9 +389,7 @@ const ResumeAnalysis = ({ resumeId: propResumeId, onBack }) => {
         </div>
       )}
 
-      {/* Strengths & Weaknesses */}
       <div className="grid md:grid-cols-2 gap-6 mb-8">
-        {/* Strengths */}
         <div className="bg-green-50 rounded-2xl shadow-lg p-8 border border-green-200">
           <h2 className="text-xl font-bold text-green-800 mb-4 flex items-center">
             <CheckCircle className="mr-2" size={24} />
@@ -428,7 +405,6 @@ const ResumeAnalysis = ({ resumeId: propResumeId, onBack }) => {
           </ul>
         </div>
 
-        {/* Weaknesses */}
         <div className="bg-red-50 rounded-2xl shadow-lg p-8 border border-red-200">
           <h2 className="text-xl font-bold text-red-800 mb-4 flex items-center">
             <AlertCircle className="mr-2" size={24} />
@@ -445,7 +421,6 @@ const ResumeAnalysis = ({ resumeId: propResumeId, onBack }) => {
         </div>
       </div>
 
-      {/* Recommendations */}
       <div className="bg-white rounded-2xl shadow-lg p-8 mb-8">
         <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
           <Target className="mr-2 text-purple-600" size={28} />
@@ -463,7 +438,6 @@ const ResumeAnalysis = ({ resumeId: propResumeId, onBack }) => {
         </div>
       </div>
 
-      {/* Formatting Score */}
       {analysis.formatting && (
         <div className="bg-white rounded-2xl shadow-lg p-8 mb-8">
           <h2 className="text-xl font-bold text-gray-800 mb-4">Formatting Analysis</h2>
@@ -484,7 +458,6 @@ const ResumeAnalysis = ({ resumeId: propResumeId, onBack }) => {
         </div>
       )}
 
-      {/* Action Buttons */}
       <div className="flex items-center justify-center space-x-4">
         <button
           onClick={analyzeResume}

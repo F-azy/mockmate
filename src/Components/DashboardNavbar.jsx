@@ -6,19 +6,15 @@ const DashboardNavbar = ({ userName = "User" }) => {
   const navigate = useNavigate();
 
   const handleSignOut = () => {
-    // Clear authentication data
     localStorage.removeItem("token");
     localStorage.removeItem("user");
-    // Redirect to signin
     navigate("/signin");
   };
 
   return (
     <nav className="flex justify-between items-center px-6 py-4 bg-white border-b border-gray-200 shadow-sm">
-      {/* Logo / Brand */}
       <div className="text-2xl font-bold text-gray-800">MockMate</div>
 
-      {/* Right Section */}
       <div className="flex items-center space-x-6">
         {/* Profile Info */}
         <div className="flex items-center space-x-2">
